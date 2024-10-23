@@ -749,6 +749,8 @@ def _sff_read_raw_record(handle, number_of_flows_per_read):
 class SffIterator(SequenceIterator):
     """Parser for Standard Flowgram Format (SFF) files."""
 
+    modes = "b"
+
     # the read header format (fixed part):
     # read_header_length     H
     # name_length            H
@@ -829,7 +831,7 @@ class SffIterator(SequenceIterator):
         """
         if alphabet is not None:
             raise ValueError("The alphabet argument is no longer supported")
-        super().__init__(source, mode="b", fmt="SFF")
+        super().__init__(source, fmt="SFF")
         self.trim = trim
         stream = self.stream
         (
@@ -1004,12 +1006,15 @@ class SffIterator(SequenceIterator):
             annotations["region"] = _get_read_region(name)
             annotations["coords"] = _get_read_xy(name)
         annotations["molecule_type"] = "DNA"
-        record = SeqRecord(
-            Seq(seq), id=name, name=name, description="", annotations=annotations
+        # Avoids type and length checks
+        record = SeqRecord._from_validated(
+            Seq(seq),
+            id=name,
+            name=name,
+            description="",
+            annotations=annotations,
+            letter_annotations={"phred_quality": quals},
         )
-        # Dirty trick to speed up this line:
-        # record.letter_annotations["phred_quality"] = quals
-        dict.__setitem__(record._per_letter_annotations, "phred_quality", quals)
         # Return the record and then continue...
         return record
 
@@ -1116,6 +1121,8 @@ class _SffTrimIterator(SffIterator):
 class SffWriter(SequenceWriter):
     """SFF file writer."""
 
+    modes = "b"
+
     def __init__(self, target, index=True, xml=None):
         """Initialize an SFF writer object.
 
@@ -1127,7 +1134,7 @@ class SffWriter(SequenceWriter):
            reading this data).
 
         """
-        super().__init__(target, "wb")
+        super().__init__(target)
         self._xml = xml
         if index:
             self._index = []

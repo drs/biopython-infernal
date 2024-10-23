@@ -145,6 +145,8 @@ def _read_feature(handle, record):
 class XdnaIterator(SequenceIterator):
     """Parser for Xdna files."""
 
+    modes = "b"
+
     def __init__(self, source):
         """Parse a Xdna file and return a SeqRecord object.
 
@@ -154,7 +156,7 @@ class XdnaIterator(SequenceIterator):
         contain a single sequence.
 
         """
-        super().__init__(source, mode="b", fmt="Xdna")
+        super().__init__(source, fmt="Xdna")
         header = self.stream.read(112)
         if not header:
             raise ValueError("Empty file.")
@@ -222,6 +224,8 @@ class XdnaIterator(SequenceIterator):
 class XdnaWriter(SequenceWriter):
     """Write files in the Xdna format."""
 
+    modes = "b"
+
     def __init__(self, target):
         """Initialize an Xdna writer object.
 
@@ -229,7 +233,7 @@ class XdnaWriter(SequenceWriter):
          - target - Output stream opened in binary mode, or a path to a file.
 
         """
-        super().__init__(target, mode="wb")
+        super().__init__(target)
 
     def write_file(self, records):
         """Write the specified record to a Xdna file.
