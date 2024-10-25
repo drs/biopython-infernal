@@ -44,6 +44,8 @@ from .Interfaces import SequenceWriter
 class TabIterator(SequenceIterator):
     """Parser for tab-delimited files."""
 
+    modes = "t"
+
     def __init__(self, source):
         """Iterate over tab separated lines as SeqRecord objects.
 
@@ -75,7 +77,7 @@ class TabIterator(SequenceIterator):
         gi|45478721|ref|NP_995576.1| length 90
 
         """
-        super().__init__(source, mode="t", fmt="Tab-separated plain-text")
+        super().__init__(source, fmt="Tab-separated plain-text")
 
     def __next__(self):
         for line in self.stream:
@@ -108,11 +110,12 @@ class TabWriter(SequenceWriter):
     with ``format="tab"``.
     """
 
+    modes = "t"
+
     def write_record(self, record):
         """Write a single tab line to the file."""
         assert self._header_written
         assert not self._footer_written
-        self._record_written = True
         self.handle.write(as_tab(record))
 
 

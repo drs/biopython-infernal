@@ -441,6 +441,8 @@ class SeqXmlIterator(SequenceIterator):
     method calls.
     """
 
+    modes = "b"
+
     # Small block size can be a problem with libexpat 2.6.0 onwards:
     BLOCK = 1024
 
@@ -451,7 +453,7 @@ class SeqXmlIterator(SequenceIterator):
         # if the text handle was opened with a different encoding than the
         # one specified in the XML file. With a binary handle, the correct
         # encoding is picked up by the parser from the XML file.
-        super().__init__(stream_or_path, mode="b", fmt="SeqXML")
+        super().__init__(stream_or_path, fmt="SeqXML")
         stream = self.stream
         parser = sax.make_parser()
         content_handler = ContentHandler()
@@ -482,37 +484,32 @@ class SeqXmlIterator(SequenceIterator):
         parser = self.parser
         content_handler = parser.getContentHandler()
         records = content_handler.records
-        try:
-            if records is None:
-                raise StopIteration
-            stream = self.stream
-            BLOCK = self.BLOCK
-            while True:
-                if len(records) > 1:
-                    # Then at least the first record is finished
-                    record = records.pop(0)
-                    return record
-                # Read in another block of the file...
-                text = stream.read(BLOCK)
-                if not text:
-                    # Closing the parser ensures that all XML data fed
-                    # into it are processed
-                    parser.close()
-                    break
-                parser.feed(text)
-            # We have reached the end of the XML file;
-            # send out the remaining records
-            try:
+        if records is None:
+            raise StopIteration
+        stream = self.stream
+        BLOCK = self.BLOCK
+        while True:
+            if len(records) > 1:
+                # Then at least the first record is finished
                 record = records.pop(0)
-            except IndexError:
-                self.records = None
-                raise StopIteration
-            else:
                 return record
-        except Exception:
-            if self.should_close_stream:
-                self.stream.close()
-            raise
+            # Read in another block of the file...
+            text = stream.read(BLOCK)
+            if not text:
+                # Closing the parser ensures that all XML data fed
+                # into it are processed
+                parser.close()
+                break
+            parser.feed(text)
+        # We have reached the end of the XML file;
+        # send out the remaining records
+        try:
+            record = records.pop(0)
+        except IndexError:
+            self.records = None
+            raise StopIteration
+        else:
+            return record
 
 
 class SeqXmlWriter(SequenceWriter):
@@ -522,6 +519,8 @@ class SeqXmlWriter(SequenceWriter):
     the molecule type is required to contain the term "DNA", "RNA", or
     "protein".
     """
+
+    modes = "b"
 
     def __init__(
         self, target, source=None, source_version=None, species=None, ncbiTaxId=None
@@ -539,7 +538,7 @@ class SeqXmlWriter(SequenceWriter):
          - ncbiTaxId - The NCBI taxonomy identifier of the species of origin.
 
         """
-        super().__init__(target, "wb")
+        super().__init__(target)
         handle = self.handle
         self.xml_generator = XMLGenerator(handle, "utf-8")
         self.xml_generator.startDocument()
